@@ -1,5 +1,5 @@
 # IN3101 - Enterprise Application Development
-## Lab Sheet 02: Building a REST API with Spring Boot
+## Lab 02 & Lab 03: REST API & Docker Containerisation
 
 **Student Name:** Ashen Randira  
 **Index Number:** 234206B  
@@ -11,30 +11,19 @@
 
 ## 📌 Project Overview
 
-This project implements a complete CRUD (Create, Read, Update, Delete) RESTful API for managing books in a library system using **Spring Boot 3**, **Spring Data JPA**, and **MySQL**. It adheres to standard layered architecture and includes interactive API documentation powered by **Swagger / SpringDoc OpenAPI**.
+This project implements a complete CRUD (Create, Read, Update, Delete) RESTful API for managing books in a library system using **Spring Boot 3**, **Spring Data JPA**, and **MySQL**. It adheres to standard layered architecture, includes interactive API documentation powered by **Swagger / SpringDoc OpenAPI**, and is fully containerised with **Docker & Docker Compose**.
 
 ```
 Client (Postman / Browser)
          │
-         ▼
-┌──────────────────┐
-│  BookController  │  @RestController, maps HTTP requests to methods
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│   BookService    │  @Service, business logic layer
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  BookRepository  │  JpaRepository<Book, Long>, data access layer
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  MySQL Database  │  library_db (Hibernate auto-creates table `book`)
-└──────────────────┘
+         ├─── Port 8080 ────────► [ api container ] (Spring Boot 3 on eclipse-temurin:21-jre)
+         │                               │
+         │                        db:3306│ (Docker network)
+         │                               ▼
+         └─── Port 3307 ────────► [ db container ] (MySQL 8.4)
+                                         │
+                                         ▼
+                                 [ library-data ] (Persistent Volume)
 ```
 
 ---
@@ -44,24 +33,65 @@ Client (Postman / Browser)
 - **Java**: JDK 21+
 - **Framework**: Spring Boot 3
 - **Data Persistence**: Spring Data JPA & Hibernate
-- **Database**: MySQL 8.0
+- **Database**: MySQL 8.4
+- **Containerisation**: Docker, Docker Compose
 - **Validation**: Jakarta Bean Validation (`spring-boot-starter-validation`)
 - **API Documentation**: SpringDoc OpenAPI UI (`springdoc-openapi-starter-webmvc-ui`)
 - **Build Tool**: Maven
 
 ---
 
-## ⚙️ Configuration & Setup
+## 🐳 Docker & Docker Compose Setup (Lab 03)
+
+### 1. Environment Configuration
+Create a `.env` file in the project root based on `.env.example`:
+```env
+DB_ROOT_PASSWORD=root123
+```
+*(Note: `.env` is ignored by Git to protect sensitive credentials)*
+
+### 2. Build the Application JAR
+```powershell
+.\mvnw.cmd clean package -DskipTests
+```
+
+### 3. Run with Docker Compose
+Start both the database and the API services in detached mode:
+```powershell
+docker compose up --build -d
+```
+Check running services and health status:
+```powershell
+docker compose ps
+```
+View application logs:
+```powershell
+docker compose logs api
+```
+
+### 4. Stopping Containers
+Stop containers while preserving database volume data:
+```powershell
+docker compose down
+```
+Stop containers and delete volumes (fresh start):
+```powershell
+docker compose down -v
+```
+
+---
+
+## ⚙️ Local Development (Without Docker - Lab 02)
 
 ### 1. Database Setup
-Create the MySQL database:
+Create the MySQL database on your local MySQL server (port 3306):
 ```sql
 DROP DATABASE IF EXISTS library_db;
 CREATE DATABASE library_db;
 ```
 
 ### 2. Application Properties
-Configure your MySQL credentials in `src/main/resources/application.properties`:
+Configure your local MySQL credentials in `src/main/resources/application.properties`:
 ```properties
 spring.application.name=library-api
 
@@ -73,21 +103,13 @@ spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 ```
 
----
-
-## 🚀 Running the Application
-
-Using the Maven Wrapper:
+### 3. Run Locally
 ```powershell
 # Windows
 .\mvnw.cmd spring-boot:run
 
 # Linux / macOS
 ./mvnw spring-boot:run
-```
-Or using standard Maven:
-```powershell
-mvn spring-boot:run
 ```
 
 The application starts by default on port `8080`.
@@ -134,6 +156,6 @@ A ready-to-use Postman collection is included in the project:
 
 ## 🌿 Git Branching
 
-- `main`: Production-ready release branch containing the stable Lab 02 deliverables.
+- `main`: Production-ready release branch containing all deliverables.
 - `dev`: Development branch for feature integration and staging.
 - `fix`: Hotfix / bugfix branch for patches and adjustments.
